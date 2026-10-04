@@ -1,0 +1,159 @@
+{% extends 'social/base.html' %}
+
+{% block title %}Post by @{{ post.author.username }} - CodeAlpha Social{% endblock %}
+
+{% block content %}
+<div class="post-detail-container">
+    <div class="back-link-wrapper">
+        <a href="{% url 'social:home' %}" class="btn-text">&larr; Back to Feed</a>
+    </div>
+
+    <article class="post-card post-card-detail">
+        <header class="post-header">
+            <div class="post-author-meta">
+                <a href="{% url 'social:profile' post.author.username %}" class="author-avatar-link">
+                    {% if post.author.profile.profile_picture %}
+                        <img src="{{ post.author.profile.profile_picture.url }}" alt="{{ post.author.username }}" class="post-avatar">
+                    {% else %}
+                        <div class="post-avatar-placeholder">
+                            <span>{{ post.author.username|make_list|first|upper }}</span>
+                        </div>
+                    {% endif %}
+                </a>
+                <div class="author-details">
+                    <a href="{% url 'social:profile' post.author.username %}" class="post-author-name">
+                        @{{ post.author.username }}
+                    </a>
+                    <time class="post-date" title="{{ post.created_at }}">
+                        {{ post.created_at|date:"F d, Y • H:i" }}
+                        {% if post.updated_at != post.created_at %}
+                            <span class="text-muted">(edited)</span>
+                        {% endif %}
+                    </time>
+                </div>
+            </div>
+
+            {% if is_author %}
+                <div class="post-owner-actions">
+                    <a href="{% url 'social:edit_post' post.pk %}" class="btn btn-secondary btn-sm">Edit Post</a>
+                    <a href="{% url 'social:delete_post' post.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                </div>
+            {% endif %}
+        </header>
+
+        <div class="post-content post-content-large">
+            <p>{{ post.content|linebreaksbr }}</p>
+        </div>
+
+        {% if post.image %}
+            <div class="post-image-wrapper">
+                <img src="{{ post.image.url }}" alt="Post image" class="post-image-detail">
+            </div>
+        {% endif %}
+
+        <footer class="post-footer">
+            <div class="post-stats-actions">
+                <form method="post" action="{% url 'social:toggle_like' post.pk %}" class="like-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    {% if user.is_authenticated %}
+                        {% if is_liked %}
+                            <button type="submit" class="btn-like liked">
+                                ❤️ <span class="like-count">{{ post.likes.count }}</span> Unlike
+                            </button>
+                        {% else %}
+                            <button type="submit" class="btn-like">
+                                🤍 <span class="like-count">{{ post.likes.count }}</span> Like
+                            </button>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'social:login' %}?next={{ request.path }}" class="btn-like">
+                            🤍 <span class="like-count">{{ post.likes.count }}</span> Like
+                        </a>
+                    {% endif %}
+                </form>
+
+                <span class="post-comments-indicator">
+                    💬 {{ comments.count }} Comment{{ comments.count|pluralize }}
+                </span>
+            </div>
+        </footer>
+    </article>
+
+    <!-- Comments Section -->
+    <section class="comments-section">
+        <h4 class="section-title">Comments ({{ comments.count }})</h4>
+
+        {% if user.is_authenticated %}
+            <div class="add-comment-card">
+                <form method="post" action="{% url 'social:post_detail' post.pk %}" class="comment-form">
+                    {% csrf_token %}
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        {{ comment_form.content }}
+                        {% if comment_form.content.errors %}
+                            <div class="field-error">{{ comment_form.content.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button type="submit" class="btn btn-primary btn-sm">Post Comment</button>
+                    </div>
+                </form>
+            </div>
+        {% else %}
+            <div class="comment-login-prompt">
+                <p><a href="{% url 'social:login' %}?next={{ request.path }}">Log in</a> or <a href="{% url 'social:register' %}">sign up</a> to join the conversation and leave a comment.</p>
+            </div>
+        {% endif %}
+
+        <div class="comments-list">
+            {% if comments %}
+                {% for comment in comments %}
+                    <div class="comment-card">
+                        <div class="comment-avatar-meta">
+                            <a href="{% url 'social:profile' comment.user.username %}" class="author-avatar-link">
+                                {% if comment.user.profile.profile_picture %}
+                                    <img src="{{ comment.user.profile.profile_picture.url }}" alt="{{ comment.user.username }}" class="comment-avatar">
+                                {% else %}
+                                    <div class="comment-avatar-placeholder">
+                                        <span>{{ comment.user.username|make_list|first|upper }}</span>
+                                    </div>
+                                {% endif %}
+                            </a>
+                            <div class="comment-body-wrapper">
+                                <div class="comment-bubble">
+                                    <div class="comment-top">
+                                        <a href="{% url 'social:profile' comment.user.username %}" class="comment-author-name">
+                                            @{{ comment.user.username }}
+                                        </a>
+                                        <time class="comment-date" title="{{ comment.created_at }}">
+                                            {{ comment.created_at|date:"M d, Y • H:i" }}
+                                        </time>
+                                    </div>
+                                    <div class="comment-content">
+                                        <p>{{ comment.content|linebreaksbr }}</p>
+                                    </div>
+                                </div>
+
+                                {% if user.is_authenticated and user == comment.user %}
+                                    <div class="comment-actions">
+                                        <form method="post" action="{% url 'social:delete_comment' comment.pk %}" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-text text-danger comment-delete-btn" onclick="return confirm('Are you sure you want to delete this comment?');">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <p>No comments yet. Be the first to share your thoughts!</p>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}

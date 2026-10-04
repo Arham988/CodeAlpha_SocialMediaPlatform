@@ -1,0 +1,137 @@
+{% extends 'social/base.html' %}
+
+{% block title %}@{{ profile_user.username }}'s Profile - CodeAlpha Social{% endblock %}
+
+{% block content %}
+<div class="profile-card">
+    <div class="profile-header">
+        <div class="profile-avatar-container">
+            {% if profile.profile_picture %}
+                <img src="{{ profile.profile_picture.url }}" alt="{{ profile_user.username }}" class="profile-avatar">
+            {% else %}
+                <div class="profile-avatar-placeholder">
+                    <span>{{ profile_user.username|make_list|first|upper }}</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="profile-info">
+            <div class="profile-top-row">
+                <h2 class="profile-username">@{{ profile_user.username }}</h2>
+                {% if is_own_profile %}
+                    <a href="{% url 'social:edit_profile' %}" class="btn btn-secondary btn-sm">Edit Profile</a>
+                {% elif user.is_authenticated %}
+                    <form method="post" action="{% url 'social:toggle_follow' profile_user.username %}" class="follow-form" style="display:inline;">
+                        {% csrf_token %}
+                        {% if is_following %}
+                            <button type="submit" class="btn btn-secondary btn-sm">Unfollow</button>
+                        {% else %}
+                            <button type="submit" class="btn btn-primary btn-sm">Follow</button>
+                        {% endif %}
+                    </form>
+                {% else %}
+                    <a href="{% url 'social:login' %}?next={{ request.path }}" class="btn btn-primary btn-sm">Follow</a>
+                {% endif %}
+            </div>
+
+            {% if is_own_profile and profile_user.email %}
+                <p class="profile-email">📧 {{ profile_user.email }}</p>
+            {% endif %}
+
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <span class="stat-value">{{ posts_count }}</span>
+                    <span class="stat-label">Posts</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">{{ followers_count }}</span>
+                    <span class="stat-label">Followers</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">{{ following_count }}</span>
+                    <span class="stat-label">Following</span>
+                </div>
+            </div>
+
+            <div class="profile-bio">
+                {% if profile.bio %}
+                    <p>{{ profile.bio|linebreaksbr }}</p>
+                {% else %}
+                    <p class="text-muted"><em>No bio added yet.</em></p>
+                {% endif %}
+            </div>
+
+            <p class="profile-joined">Joined {{ profile.created_at|date:"F Y" }}</p>
+        </div>
+    </div>
+
+    <div class="profile-posts-section">
+        <h3 class="section-title">Posts ({{ posts_count }})</h3>
+        {% if user_posts %}
+            <div class="profile-posts-list">
+                {% for post in user_posts %}
+                    <article class="post-card" style="margin-bottom: 1.5rem;">
+                        <header class="post-header">
+                            <div class="post-author-meta">
+                                <time class="post-date">{{ post.created_at|date:"M d, Y • H:i" }}</time>
+                            </div>
+                            {% if is_own_profile %}
+                                <div class="post-owner-actions">
+                                    <a href="{% url 'social:edit_post' post.pk %}" class="btn-text">Edit</a>
+                                    <span class="action-divider">•</span>
+                                    <a href="{% url 'social:delete_post' post.pk %}" class="btn-text text-danger">Delete</a>
+                                </div>
+                            {% endif %}
+                        </header>
+                        <div class="post-content">
+                            <p>{{ post.content|linebreaksbr }}</p>
+                        </div>
+                        {% if post.image %}
+                            <div class="post-image-wrapper">
+                                <a href="{% url 'social:post_detail' post.pk %}">
+                                    <img src="{{ post.image.url }}" alt="Post image" class="post-image">
+                                </a>
+                            </div>
+                        {% endif %}
+                        <footer class="post-footer">
+                            <div class="post-stats-actions">
+                                <form method="post" action="{% url 'social:toggle_like' post.pk %}" class="like-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    {% if user.is_authenticated %}
+                                        {% if post.id in liked_post_ids %}
+                                            <button type="submit" class="btn-like liked">
+                                                ❤️ <span class="like-count">{{ post.likes.count }}</span> Unlike
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" class="btn-like">
+                                                🤍 <span class="like-count">{{ post.likes.count }}</span> Like
+                                            </button>
+                                        {% endif %}
+                                    {% else %}
+                                        <a href="{% url 'social:login' %}?next={{ request.path }}" class="btn-like">
+                                            🤍 <span class="like-count">{{ post.likes.count }}</span> Like
+                                        </a>
+                                    {% endif %}
+                                </form>
+
+                                <a href="{% url 'social:post_detail' post.pk %}" class="post-comments-indicator">
+                                    💬 {{ post.comments.count }} Comment{{ post.comments.count|pluralize }}
+                                </a>
+                            </div>
+                            <a href="{% url 'social:post_detail' post.pk %}" class="post-view-link">View Full Post</a>
+                        </footer>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>No posts yet by @{{ profile_user.username }}.</p>
+                {% if is_own_profile %}
+                    <p><a href="{% url 'social:create_post' %}" class="btn btn-primary btn-sm" style="margin-top: 0.75rem;">Create Your First Post</a></p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

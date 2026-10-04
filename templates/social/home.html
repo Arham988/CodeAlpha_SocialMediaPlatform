@@ -1,0 +1,126 @@
+{% extends 'social/base.html' %}
+
+{% block title %}Feed - CodeAlpha Social{% endblock %}
+
+{% block content %}
+<div class="feed-container">
+    {% if user.is_authenticated %}
+        <div class="create-post-prompt-card">
+            <div class="prompt-header">
+                {% if user.profile.profile_picture %}
+                    <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" class="mini-avatar">
+                {% else %}
+                    <div class="mini-avatar-placeholder">
+                        <span>{{ user.username|make_list|first|upper }}</span>
+                    </div>
+                {% endif %}
+                <a href="{% url 'social:create_post' %}" class="prompt-input-fake">
+                    What's on your mind, {{ user.username }}?
+                </a>
+            </div>
+            <div class="prompt-actions">
+                <a href="{% url 'social:create_post' %}" class="btn btn-primary btn-sm">Create a Post</a>
+            </div>
+        </div>
+    {% else %}
+        <div class="welcome-banner">
+            <h2>Welcome to <span class="highlight">CodeAlpha Social</span></h2>
+            <p class="description">Join our community to share posts, thoughts, and connect with other users.</p>
+            <div class="cta-buttons">
+                <a href="{% url 'social:register' %}" class="btn btn-primary">Sign Up</a>
+                <a href="{% url 'social:login' %}" class="btn btn-secondary">Log In</a>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="posts-stream">
+        <h3 class="feed-title">Latest Updates</h3>
+
+        {% if posts %}
+            {% for post in posts %}
+                <article class="post-card">
+                    <header class="post-header">
+                        <div class="post-author-meta">
+                            <a href="{% url 'social:profile' post.author.username %}" class="author-avatar-link">
+                                {% if post.author.profile.profile_picture %}
+                                    <img src="{{ post.author.profile.profile_picture.url }}" alt="{{ post.author.username }}" class="post-avatar">
+                                {% else %}
+                                    <div class="post-avatar-placeholder">
+                                        <span>{{ post.author.username|make_list|first|upper }}</span>
+                                    </div>
+                                {% endif %}
+                            </a>
+                            <div class="author-details">
+                                <a href="{% url 'social:profile' post.author.username %}" class="post-author-name">
+                                    @{{ post.author.username }}
+                                </a>
+                                <time class="post-date" title="{{ post.created_at }}">
+                                    {{ post.created_at|date:"M d, Y • H:i" }}
+                                </time>
+                            </div>
+                        </div>
+
+                        {% if user.is_authenticated and user == post.author %}
+                            <div class="post-owner-actions">
+                                <a href="{% url 'social:edit_post' post.pk %}" class="btn-text">Edit</a>
+                                <span class="action-divider">•</span>
+                                <a href="{% url 'social:delete_post' post.pk %}" class="btn-text text-danger">Delete</a>
+                            </div>
+                        {% endif %}
+                    </header>
+
+                    <div class="post-content">
+                        <p>{{ post.content|linebreaksbr }}</p>
+                    </div>
+
+                    {% if post.image %}
+                        <div class="post-image-wrapper">
+                            <a href="{% url 'social:post_detail' post.pk %}">
+                                <img src="{{ post.image.url }}" alt="Post image" class="post-image">
+                            </a>
+                        </div>
+                    {% endif %}
+
+                    <footer class="post-footer">
+                        <div class="post-stats-actions">
+                            <form method="post" action="{% url 'social:toggle_like' post.pk %}" class="like-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.path }}">
+                                {% if user.is_authenticated %}
+                                    {% if post.id in liked_post_ids %}
+                                        <button type="submit" class="btn-like liked">
+                                            ❤️ <span class="like-count">{{ post.likes.count }}</span> Unlike
+                                        </button>
+                                    {% else %}
+                                        <button type="submit" class="btn-like">
+                                            🤍 <span class="like-count">{{ post.likes.count }}</span> Like
+                                        </button>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{% url 'social:login' %}?next={{ request.path }}" class="btn-like">
+                                        🤍 <span class="like-count">{{ post.likes.count }}</span> Like
+                                    </a>
+                                {% endif %}
+                            </form>
+
+                            <a href="{% url 'social:post_detail' post.pk %}" class="post-comments-indicator">
+                                💬 {{ post.comments.count }} Comment{{ post.comments.count|pluralize }}
+                            </a>
+                        </div>
+                        <a href="{% url 'social:post_detail' post.pk %}" class="post-view-link">View Full Post</a>
+                    </footer>
+                </article>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <p>No posts yet.</p>
+                {% if user.is_authenticated %}
+                    <p><a href="{% url 'social:create_post' %}" class="btn btn-primary btn-sm" style="margin-top: 0.75rem;">Be the first to share an update!</a></p>
+                {% else %}
+                    <p><a href="{% url 'social:register' %}">Create an account</a> to be the first to post!</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'social/base.html' %}
+
+{% block title %}Create Post - CodeAlpha Social{% endblock %}
+
+{% block content %}
+<div class="edit-card">
+    <div class="edit-header">
+        <h2>Create a New Post</h2>
+        <p class="text-muted">Share your thoughts with the community</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" action="{% url 'social:create_post' %}" class="edit-form">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="{{ form.content.id_for_label }}">What's on your mind?</label>
+            {{ form.content }}
+            {% if form.content.errors %}
+                <div class="field-error">{{ form.content.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.image.id_for_label }}">Add Photo (Optional)</label>
+            {{ form.image }}
+            {% if form.image.errors %}
+                <div class="field-error">{{ form.image.errors.0 }}</div>
+            {% endif %}
+            <small class="form-help">Supported formats: JPG, PNG, GIF, WebP</small>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Publish Post</button>
+            <a href="{% url 'social:home' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends 'social/base.html' %}
+
+{% block title %}Edit Profile - CodeAlpha Social{% endblock %}
+
+{% block content %}
+<div class="edit-card">
+    <div class="edit-header">
+        <h2>Edit Profile</h2>
+        <p class="text-muted">Customize your bio and avatar</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" action="{% url 'social:edit_profile' %}" class="edit-form">
+        {% csrf_token %}
+
+        <div class="current-avatar-preview">
+            <label>Current Profile Picture</label>
+            <div class="avatar-preview-box">
+                {% if user.profile.profile_picture %}
+                    <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" class="profile-avatar preview-img">
+                {% else %}
+                    <div class="profile-avatar-placeholder preview-placeholder">
+                        <span>{{ user.username|make_list|first|upper }}</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.profile_picture.id_for_label }}">Upload New Picture</label>
+            {{ form.profile_picture }}
+            {% if form.profile_picture.errors %}
+                <div class="field-error">{{ form.profile_picture.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.bio.id_for_label }}">Bio</label>
+            {{ form.bio }}
+            {% if form.bio.errors %}
+                <div class="field-error">{{ form.bio.errors.0 }}</div>
+            {% endif %}
+            <small class="form-help">Max 500 characters</small>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{% url 'social:profile' user.username %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

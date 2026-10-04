@@ -1,0 +1,46 @@
+{% extends 'social/base.html' %}
+
+{% block title %}Edit Post #{{ post.pk }} - CodeAlpha Social{% endblock %}
+
+{% block content %}
+<div class="edit-card">
+    <div class="edit-header">
+        <h2>Edit Post</h2>
+        <p class="text-muted">Update your post content or image</p>
+    </div>
+
+    {% if post.image %}
+        <div class="current-avatar-preview">
+            <label>Current Attached Image</label>
+            <div class="post-preview-box">
+                <img src="{{ post.image.url }}" alt="Current post image" class="post-preview-img">
+            </div>
+        </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" action="{% url 'social:edit_post' post.pk %}" class="edit-form">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="{{ form.content.id_for_label }}">Post Content</label>
+            {{ form.content }}
+            {% if form.content.errors %}
+                <div class="field-error">{{ form.content.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.image.id_for_label }}">Change Image (Optional)</label>
+            {{ form.image }}
+            {% if form.image.errors %}
+                <div class="field-error">{{ form.image.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{% url 'social:post_detail' post.pk %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
